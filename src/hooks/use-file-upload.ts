@@ -59,6 +59,22 @@ export function useFileUpload() {
         throw new Error(rawText || "Upload failed");
       }
 
+            let parsed: any = {};
+      try {
+        parsed = rawText ? JSON.parse(rawText) : {};
+      } catch (err) {
+        throw new Error(
+          rawText || "Backend unreachable or returned invalid JSON"
+        );
+      }
+
+      const uploaded = Array.isArray(parsed.uploadedFiles)
+        ? parsed.uploadedFiles.map((fileName: string, index: number) => ({
+            fileId: `${uniqueId}-${index}`,
+            fileName,
+          }))
+        : tempUploadedFiles;
+
       let responseData: any;
       try {
         responseData = rawText ? JSON.parse(rawText) : {};
@@ -70,11 +86,11 @@ export function useFileUpload() {
 
       // Mark upload as successful
       setUploadSuccess(true);
-      setUploadedFiles(tempUploadedFiles);
+      setUploadedFiles(uploaded);
 
       return {
         success: true,
-        files: tempUploadedFiles,
+        files: uploaded,
       };
     } catch (error) {
       // Reset state on error
