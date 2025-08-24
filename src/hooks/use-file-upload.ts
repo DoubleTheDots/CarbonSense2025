@@ -53,19 +53,28 @@ export function useFileUpload() {
         body: formData,
       });
 
-      const responseData = await response.json();
+      const rawText = await response.text();
 
       if (!response.ok) {
-        throw new Error(responseData.message || "Upload failed");
+        throw new Error(rawText || "Upload failed");
+      }
+
+      let responseData: any;
+      try {
+        responseData = rawText ? JSON.parse(rawText) : {};
+      } catch (err) {
+        throw new Error(
+          rawText || "Backend unreachable or returned invalid JSON"
+        );
       }
 
       // Mark upload as successful
       setUploadSuccess(true);
-      setUploadedFiles(tempUploadedFiles)
+      setUploadedFiles(tempUploadedFiles);
 
       return {
         success: true,
-        files: uploadedFiles
+        files: tempUploadedFiles,
       };
     } catch (error) {
       // Reset state on error
