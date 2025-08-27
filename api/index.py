@@ -203,8 +203,12 @@ def upload_file():
                 "AZURE_STORAGE_CONTAINER_NAME", "carbonsense")
 
             # Create a temporary file
-            with tempfile.NamedTemporaryFile(delete=False) as temp:
-                file.save(temp.name)
+            temp_path = None
+            try:
+                # Create a temporary file and save the upload
+                with tempfile.NamedTemporaryFile(delete=False) as temp:
+                    file.save(temp.name)
+                    temp_path = temp.name
 
                 blob_service_client = BlobServiceClient.from_connection_string(
                     get_azure_storage_connection_string()
@@ -217,7 +221,7 @@ def upload_file():
                     container_client.create_container()
 
                 # Upload the file
-                with open(temp.name, "rb") as data:
+                with open(temp_path, "rb") as data:
                     container_client.upload_blob(
                         name=blob_name,
                         data=data,
@@ -225,8 +229,10 @@ def upload_file():
                         content_settings=ContentSettings(
                             content_type="text/csv")
                     )
-                # Clean up the temporary file
-                os.unlink(temp.name)
+            finally:
+                # Clean up the temporary file after the upload
+                    if temp_path and os.path.exists(temp_path):
+                        os.unlink(temp_path)
 
             uploaded_files.append(filename)
 
